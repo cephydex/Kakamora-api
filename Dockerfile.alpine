@@ -1,0 +1,25 @@
+ARG GO_PORT=8080
+
+# BUILD
+FROM golang:1.22-alpine as BUILD
+LABEL MAINTAINER "Sumaila Alfa <s.alfa@akofisgroup.com>"
+ENV GO111MODULE=on
+RUN apk update && apk add tzdata
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+ENV HTTP_PORT=${GO_PORT}
+EXPOSE ${GO_PORT}
+
+# BINARIES
+FROM alpine:latest
+# RUN apk add tzdata
+COPY --from=BUILD /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=BUILD /app/svclookup /app/svclookup
+COPY --from=BUILD /app/app.env /app.env
+RUN pwd && ls -asl
+ENTRYPOINT ["/app/svclookup"]

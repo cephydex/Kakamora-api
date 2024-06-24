@@ -1,0 +1,14 @@
+# version: "3"
+
+services:
+  app:
+    container_name: lookup-svc
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    # env_file:
+    #   - .env
+    # volumes:
+    #   - ".:/app"
+    ports:
+      - 7041:8080

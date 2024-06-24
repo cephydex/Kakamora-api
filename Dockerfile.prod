@@ -1,0 +1,25 @@
+FROM golang:1.22.3-alpine AS build
+RUN apk update && apk add ca-certificates && apk add tzdata
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build
+
+# Run the tests in the container
+FROM build AS test-stage
+RUN go test -v ./...
+
+FROM scratch
+WORKDIR /
+
+COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /app/app.env /app.env
+COPY --from=build /app/svclookup /svclookup
+
+EXPOSE 8080
+ENTRYPOINT ["/svclookup"]
